@@ -14,7 +14,7 @@ from datetime import timedelta
 
 # https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
 def notify_slack(message):
-    slack_hook_url = "https://hooks.slack.com/services/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"
+    slack_hook_url = os.environ['SLACK_HOOK_URL']
     requests.post(slack_hook_url, json={"text":message})
 
 def extract_today_created_time(item_time):
@@ -26,13 +26,15 @@ def extract_today_created_time(item_time):
     else:
         return False, item_time.replace("\n","").replace(" ","")
     
-def is_new(created_time, interval_in_s):
+def is_new(created_time, interval_in_s=240):
+    """ Post can be updated later in 3 minutes => use default interval is 4' = 240"
+    """
     tdelta = timedelta(seconds=int(interval_in_s))
-    epsilon = timedelta(seconds=int(interval_in_s/5))
     now_hours = datetime.now().hour
     now_minutes = datetime.now().minute
-    now = timedelta(hours=now_hours, minutes=now_minutes)
-    return now < created_time + tdelta + epsilon
+    now_seconds = datetime.now().second
+    now = timedelta(hours=now_hours, minutes=now_minutes, seconds=now_seconds)
+    return now < created_time + tdelta
 
 def update_log(message):
     with open("/tmp/ebay_kleinanzeigen_daemon_log.txt", "a") as f:
@@ -45,7 +47,7 @@ def do_something():
     queries = ["+".join(query.split(" ")) for query in queries]
     distances = [20, 1000] # in km
     page_num = 0
-    interval_in_s = 30000
+    interval_in_s = 30
     assert len(distances) == len(queries), "Number of queries and distance is different."
 
     # Get locationID code from ebay-kleinanzeigen
@@ -81,7 +83,7 @@ def do_something():
                 item_time = item.find('div', {"class": "adlist--item--info--date"}).contents[0]
                 is_today, created_time = extract_today_created_time(item_time)
                 if is_today:
-                    if is_new(created_time, interval_in_s):
+                    if is_new(created_time):
                         notify_slack("FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
                         update_log("SEND NOTIFICATION!")
                     update_log("Last item for {} checked at {} in distance {} km is posted TODAY at: {}\n" \
