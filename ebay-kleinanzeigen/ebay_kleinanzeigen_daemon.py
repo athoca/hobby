@@ -98,7 +98,7 @@ def do_something():
             else:
                 update_log("NO ITEM FOUND for {} checked at {} in distance {} km.\n" \
                                 .format(query.upper(), datetime.now(), dist))
-        print("\n")
+        update_log("\n")
         time.sleep(tdelta*60)
 
 def run():
