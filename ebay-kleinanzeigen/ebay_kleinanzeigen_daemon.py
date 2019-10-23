@@ -13,6 +13,7 @@ from datetime import datetime
 from datetime import timedelta
 from slackclient import SlackClient
 
+# !pip install slackclient==1.3.2
 # token for authentication to send message to slack. You can take it from here: https://api.slack.com/docs/oauth-test-tokens
 token = "xoxp-489547421814-487977512340-792097758835-855563dc0df2666b9fc7dfc188180713"
 # channel of slack you want to send message
@@ -43,9 +44,10 @@ def do_something():
     lng = "11.6981558"
     queries = ["ikea skarsta", "bose revolve"]
     queries = ["+".join(query.split(" ")) for query in queries]
-    dist = 10 # in km
+    distances = [20, 1000] # in km
     page_num = 0
     tdelta = 1
+    assert len(distances) == len(queries), "Number of queries and distance is different."
 
     # Get locationID code from ebay-kleinanzeigen
     url_for_location_id = "https://m.ebay-kleinanzeigen.de/s-ort-vorschlag.json?lat="+ lat + "&lng=" + lng
@@ -54,7 +56,8 @@ def do_something():
     locationId = json.loads(page)[0]['id']
 
     while True:
-        for query in queries:
+        for i, query in enumerate(queries):
+            dist = distances[i]
             url = "https://m.ebay-kleinanzeigen.de/s-suche-veraendern?locationId=" + str(locationId) + \
             "&distance=" + str(dist) + \
             "&categoryId=&minPrice=&maxPrice=&adType=&posterType="+ \
@@ -86,8 +89,8 @@ def do_something():
                         slack_notifier.api_call('chat.postMessage', channel=channel, attachments=attachments, username=username)
 
             with open("/tmp/ebay_kleinanzeigen_daemon_log.txt", "a") as f:
-                f.write("Last item for {} checked at {} is posted at: {}\n" \
-                        .format(query.upper(), datetime.now(), str(created_time)))
+                f.write("TODAY Last item for {} checked at {} in distance {} km is posted at: {}\n" \
+                        .format(query.upper(), datetime.now(), dist, str(created_time)))
         time.sleep(tdelta*60)
 
 def run():
