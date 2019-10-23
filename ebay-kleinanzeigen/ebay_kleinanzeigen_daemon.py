@@ -11,16 +11,11 @@ import os.path
 import json
 from datetime import datetime
 from datetime import timedelta
-from slackclient import SlackClient
 
-# !pip install slackclient==1.3.2
-# token for authentication to send message to slack. You can take it from here: https://api.slack.com/docs/oauth-test-tokens
-token = "xoxp-489547421814-487977512340-792097758835-855563dc0df2666b9fc7dfc188180713"
-# channel of slack you want to send message
-channel = "ebay"
-# name of the Notifier you want to set. This username will be the sender's name in slack
-username = "automator"
-slack_notifier = SlackClient(token)
+# https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
+def notify_slack(message):
+    slack_hook_url = "https://hooks.slack.com/services/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"
+    requests.post(slack_hook_url, json={"text":message})
 
 def extract_today_created_time(item_time):
     if "Heute" in item_time:
@@ -31,12 +26,13 @@ def extract_today_created_time(item_time):
     else:
         return False, item_time.replace("\n","").replace(" ","")
     
-def is_new(created_time, delta = 1):
-    tdelta = timedelta(minutes=int(delta)) # in minute
+def is_new(created_time, interval_in_s):
+    tdelta = timedelta(seconds=int(interval_in_s))
+    epsilon = timedelta(seconds=int(interval_in_s/5))
     now_hours = datetime.now().hour
     now_minutes = datetime.now().minute
     now = timedelta(hours=now_hours, minutes=now_minutes)
-    return now < created_time + tdelta
+    return now < created_time + tdelta + epsilon
 
 def update_log(message):
     with open("/tmp/ebay_kleinanzeigen_daemon_log.txt", "a") as f:
@@ -49,7 +45,7 @@ def do_something():
     queries = ["+".join(query.split(" ")) for query in queries]
     distances = [20, 1000] # in km
     page_num = 0
-    tdelta = 1
+    interval_in_s = 30000
     assert len(distances) == len(queries), "Number of queries and distance is different."
 
     # Get locationID code from ebay-kleinanzeigen
@@ -59,6 +55,7 @@ def do_something():
     locationId = json.loads(page)[0]['id']
 
     while True:
+        start = time.time()
         for i, query in enumerate(queries):
             dist = distances[i]
             url = "https://m.ebay-kleinanzeigen.de/s-suche-veraendern?locationId=" + str(locationId) + \
@@ -84,12 +81,9 @@ def do_something():
                 item_time = item.find('div', {"class": "adlist--item--info--date"}).contents[0]
                 is_today, created_time = extract_today_created_time(item_time)
                 if is_today:
-                    if is_new(created_time, tdelta):
-                        attachments = [{}]
-                        attachments[0]['color'] = "good"
-                        attachments[0]['title'] = "NEW {}".format(query.upper())
-                        attachments[0]['text'] = "Post at {}".format(created_time)
-                        slack_notifier.api_call('chat.postMessage', channel=channel, attachments=attachments, username=username)
+                    if is_new(created_time, interval_in_s):
+                        notify_slack("FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
+                        update_log("SEND NOTIFICATION!")
                     update_log("Last item for {} checked at {} in distance {} km is posted TODAY at: {}\n" \
                                 .format(query.upper(), datetime.now(), dist, str(created_time)))
                 else:
@@ -99,7 +93,8 @@ def do_something():
                 update_log("NO ITEM FOUND for {} checked at {} in distance {} km.\n" \
                                 .format(query.upper(), datetime.now(), dist))
         update_log("\n")
-        time.sleep(tdelta*60)
+        processing_time = time.time() - start
+        time.sleep(max(0.01, interval_in_s - processing_time))
 
 def run():
     with daemon.DaemonContext(pidfile=lockfile.FileLock('/tmp/ebay-kleinanzeigen.pid')):
