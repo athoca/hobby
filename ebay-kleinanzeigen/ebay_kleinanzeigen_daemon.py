@@ -27,9 +27,9 @@ def extract_today_created_time(item_time):
         index = item_time.find("Heute,")
         created_hours = int(item_time[index+7:index + 9])
         created_minutes = int(item_time[index+10:index + 12])
-        return timedelta(hours=created_hours, minutes=created_minutes)
+        return True, timedelta(hours=created_hours, minutes=created_minutes)
     else:
-        return False
+        return False, item_time.replace("\n","").replace(" ","")
     
 def is_new(created_time, delta = 1):
     tdelta = timedelta(minutes=int(delta)) # in minute
@@ -38,6 +38,9 @@ def is_new(created_time, delta = 1):
     now = timedelta(hours=now_hours, minutes=now_minutes)
     return now < created_time + tdelta
 
+def update_log(message):
+    with open("/tmp/ebay_kleinanzeigen_daemon_log.txt", "a") as f:
+        f.write(message)
 
 def do_something():
     lat = "48.1151649"
@@ -79,18 +82,23 @@ def do_something():
             if len(items) > 0:
                 item = items[0] # get last item
                 item_time = item.find('div', {"class": "adlist--item--info--date"}).contents[0]
-                created_time = extract_today_created_time(item_time)
-                if created_time:
+                is_today, created_time = extract_today_created_time(item_time)
+                if is_today:
                     if is_new(created_time, tdelta):
                         attachments = [{}]
                         attachments[0]['color'] = "good"
                         attachments[0]['title'] = "NEW {}".format(query.upper())
                         attachments[0]['text'] = "Post at {}".format(created_time)
                         slack_notifier.api_call('chat.postMessage', channel=channel, attachments=attachments, username=username)
-
-            with open("/tmp/ebay_kleinanzeigen_daemon_log.txt", "a") as f:
-                f.write("TODAY Last item for {} checked at {} in distance {} km is posted at: {}\n" \
-                        .format(query.upper(), datetime.now(), dist, str(created_time)))
+                    update_log("Last item for {} checked at {} in distance {} km is posted TODAY at: {}\n" \
+                                .format(query.upper(), datetime.now(), dist, str(created_time)))
+                else:
+                    update_log("Last item for {} checked at {} in distance {} km is posted at: {}\n" \
+                                .format(query.upper(), datetime.now(), dist, str(created_time)))
+            else:
+                update_log("NO ITEM FOUND for {} checked at {} in distance {} km.\n" \
+                                .format(query.upper(), datetime.now(), dist))
+        print("\n")
         time.sleep(tdelta*60)
 
 def run():
