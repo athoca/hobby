@@ -13,6 +13,24 @@ from datetime import datetime
 from datetime import timedelta
 
 # https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
+# https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
+class SlackNotifier():
+    def __init__(self, url, interval_in_s):
+        self.slack_hook_url = url
+        self.tdelta = timedelta(seconds=interval_in_s)
+        self.lasttime = None
+    def call(self, message):
+        if not self.is_just_called():
+            requests.post(self.slack_hook_url, json={"text":message})
+            self.lasttime = datetime.now()
+    def is_just_called(self):
+        if self.lasttime is None:
+            return False
+        else:
+            return datetime.now() < self.lasttime + self.tdelta
+
+notifier = SlackNotifier(os.environ['SLACK_HOOK_URL'], 60*5)
+
 def notify_slack(message):
     slack_hook_url = os.environ['SLACK_HOOK_URL']
     requests.post(slack_hook_url, json={"text":message})
@@ -84,7 +102,7 @@ def do_something():
                 is_today, created_time = extract_today_created_time(item_time)
                 if is_today:
                     if is_new(created_time):
-                        notify_slack("FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
+                        notifier.call("FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
                         update_log("SEND NOTIFICATION!")
                     update_log("Last item for {} checked at {} in distance {} km is posted TODAY at: {}\n" \
                                 .format(query.upper(), datetime.now(), dist, str(created_time)))
