@@ -13,27 +13,27 @@ from datetime import datetime
 from datetime import timedelta
 
 # https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
-# https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
-# https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
 class SlackNotifier():
     def __init__(self, url, interval_in_s):
         self.slack_hook_url = url
         self.tdelta = timedelta(seconds=interval_in_s)
-        self.lasttime = None
-    def call(self, message, forced=False):
+        self.lasttime = {}
+    def call(self, Id, message, forced=False):
         if forced:
             requests.post(self.slack_hook_url, json={"text":message})
-            self.lasttime = datetime.now()
-        elif not self.is_just_called():
+            self.lasttime[Id] = datetime.now()
+        elif not self.is_just_called(Id):
             requests.post(self.slack_hook_url, json={"text":message})
-            self.lasttime = datetime.now()
-    def is_just_called(self):
-        if self.lasttime is None:
+            self.lasttime[Id] = datetime.now()
+    def is_just_called(self, Id):
+        if not self.lasttime:
             return False
+        elif Id in self.lasttime.keys():
+            return datetime.now() < self.lasttime[Id] + self.tdelta        
         else:
-            return datetime.now() < self.lasttime + self.tdelta
+            return False
 
-notifier = SlackNotifier(os.environ['SLACK_HOOK_URL'], 60*5)
+notifier = SlackNotifier(os.environ['SLACK_HOOK_URL'], 60*4)
 
 def notify_slack(message):
     slack_hook_url = os.environ['SLACK_HOOK_URL']
@@ -105,8 +105,10 @@ def do_something():
                 item_time = item.find('div', {"class": "adlist--item--info--date"}).contents[0]
                 is_today, created_time = extract_today_created_time(item_time)
                 if is_today:
+                # if True:
                     if is_new(created_time):
-                        notifier.call("FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
+                    # if True:
+                        notifier.call(i, "FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
                         update_log("SEND NOTIFICATION!")
                     update_log("Last item for {} checked at {} in distance {} km is posted TODAY at: {}\n" \
                                 .format(query.upper(), datetime.now(), dist, str(created_time)))
