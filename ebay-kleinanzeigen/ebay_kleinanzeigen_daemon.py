@@ -14,13 +14,17 @@ from datetime import timedelta
 
 # https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
 # https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
+# https://api.slack.com/apps/APSE1SZPZ/incoming-webhooks?
 class SlackNotifier():
     def __init__(self, url, interval_in_s):
         self.slack_hook_url = url
         self.tdelta = timedelta(seconds=interval_in_s)
         self.lasttime = None
-    def call(self, message):
-        if not self.is_just_called():
+    def call(self, message, forced=False):
+        if forced:
+            requests.post(self.slack_hook_url, json={"text":message})
+            self.lasttime = datetime.now()
+        elif not self.is_just_called():
             requests.post(self.slack_hook_url, json={"text":message})
             self.lasttime = datetime.now()
     def is_just_called(self):
