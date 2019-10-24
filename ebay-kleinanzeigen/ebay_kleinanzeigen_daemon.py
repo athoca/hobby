@@ -36,6 +36,7 @@ class SlackNotifier():
 notifier = SlackNotifier(os.environ['SLACK_HOOK_URL'], 60*4)
 
 def notify_slack(message):
+    """Deprecated"""
     slack_hook_url = os.environ['SLACK_HOOK_URL']
     requests.post(slack_hook_url, json={"text":message})
 
