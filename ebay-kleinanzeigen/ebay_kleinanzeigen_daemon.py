@@ -66,9 +66,9 @@ def update_log(message):
 def do_something():
     lat = "48.1151649"
     lng = "11.6981558"
-    queries = ["ikea skarsta", "bose revolve"]
+    queries = ["ikea skarsta", "bose revolve", "glasbild"]
     queries = ["+".join(query.split(" ")) for query in queries]
-    distances = [20, 1000] # in km
+    distances = [20, 1000, 15] # in km
     page_num = 0
     interval_in_s = 30
     assert len(distances) == len(queries), "Number of queries and distance is different."
