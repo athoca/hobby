@@ -68,10 +68,13 @@ def do_something():
     lng = "11.6981558"
     queries = ["ikea skarsta", "bose revolve", "glasbild"]
     queries = ["+".join(query.split(" ")) for query in queries]
-    distances = [20, 1000, 15] # in km
+    distances = [20, 20, 20] # in km
+    maxprices = [110, 110, 30] # in km
     page_num = 0
     interval_in_s = 30
+
     assert len(distances) == len(queries), "Number of queries and distance is different."
+    assert len(queries) == len(maxprices), "Number of queries and maxprice is different."
 
     # Get locationID code from ebay-kleinanzeigen
     url_for_location_id = "https://m.ebay-kleinanzeigen.de/s-ort-vorschlag.json?lat="+ lat + "&lng=" + lng
@@ -83,9 +86,11 @@ def do_something():
         start = time.time()
         for i, query in enumerate(queries):
             dist = distances[i]
+            maxprice = maxprices[i]
             url = "https://m.ebay-kleinanzeigen.de/s-suche-veraendern?locationId=" + str(locationId) + \
             "&distance=" + str(dist) + \
-            "&categoryId=&minPrice=&maxPrice=&adType=&posterType="+ \
+            "&categoryId=&minPrice=&maxPrice=" + str(maxprice) + \
+            "&adType=&posterType="+ \
             "&q=" + query
             # print(url)
             result = requests.get(url)
