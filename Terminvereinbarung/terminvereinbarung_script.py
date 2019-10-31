@@ -72,7 +72,7 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     page = r1.content
     doc = soup(page, "html.parser")
     elements = doc.findAll('input', {"name": "__ncforminfo"})
-    if len(elements) = 0:
+    if len(elements) == 0:
         return available_date
     element = elements[0]
     # Second call to get available dates
