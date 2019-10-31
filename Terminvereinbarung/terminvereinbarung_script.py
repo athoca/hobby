@@ -51,6 +51,8 @@ CASETYPES = 'CASETYPES[Aufenthaltserlaubnis Blaue Karte EU]'
 ZONE = 'Termin Wartezone SCIF'
 
 def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
+    available_date = None
+
     # Get information for KVR from
     # https://www46.muenchen.de/termin/index.php?cts=1080627"
     termin_url = termin_url
@@ -69,8 +71,10 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     r1 = requests.get(termin_url, headers=headers1)
     page = r1.content
     doc = soup(page, "html.parser")
-    element = doc.findAll('input', {"name": "__ncforminfo"})[0]
-    
+    elements = doc.findAll('input', {"name": "__ncforminfo"})
+    if len(elements) = 0:
+        return available_date
+    element = elements[0]
     # Second call to get available dates
     data = {}
     data['step'] = 'WEB_APPOINT_SEARCH_BY_CASETYPES'
@@ -100,7 +104,6 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     appoints = ast.literal_eval(appoints_line[right:left+1])
     
     appoints_dates = appoints[zone]['appoints']
-    available_date = None
     for key in appoints_dates.keys():
         if len(appoints_dates[key]) > 0:
             available_date = key
