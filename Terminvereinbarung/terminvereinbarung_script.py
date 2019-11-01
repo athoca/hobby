@@ -95,10 +95,14 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     page = r2.content
     page = page.decode("utf-8")
 
+    appoints_line = None
     for item in page.split("\n"):
         if "jsonAppoints" in item:
             appoints_line = item.strip()
             break
+    if appoints_line is None:
+        return available_date
+    
     right = appoints_line.find('{')
     left = appoints_line.rfind('}')
     appoints = ast.literal_eval(appoints_line[right:left+1])
