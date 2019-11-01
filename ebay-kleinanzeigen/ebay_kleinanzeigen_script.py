@@ -87,47 +87,50 @@ if __name__ == "__main__":
     locationId = json.loads(page)[0]['id']
 
     while True:
-        start = time.time()
-        for i, query in enumerate(queries):
-            dist = distances[i]
-            maxprice = maxprices[i]
-            url = "https://m.ebay-kleinanzeigen.de/s-suche-veraendern?locationId=" + str(locationId) + \
-            "&distance=" + str(dist) + \
-            "&categoryId=&minPrice=&maxPrice=" + str(maxprice) + \
-            "&adType=&posterType="+ \
-            "&q=" + query
-            # print(url)
-            result = requests.get(url)
-            page = result.text
-            doc = soup(page, "html.parser")
-            links = [element.get('content') for element in doc.find_all('meta')]
-            link = links[6]
-            link0, link1 = link.split("distance")
-            url = link0 + "page=" + str(page_num) + "&distance" + link1
+        try:
+            start = time.time()
+            for i, query in enumerate(queries):
+                dist = distances[i]
+                maxprice = maxprices[i]
+                url = "https://m.ebay-kleinanzeigen.de/s-suche-veraendern?locationId=" + str(locationId) + \
+                "&distance=" + str(dist) + \
+                "&categoryId=&minPrice=&maxPrice=" + str(maxprice) + \
+                "&adType=&posterType="+ \
+                "&q=" + query
+                # print(url)
+                result = requests.get(url)
+                page = result.text
+                doc = soup(page, "html.parser")
+                links = [element.get('content') for element in doc.find_all('meta')]
+                link = links[6]
+                link0, link1 = link.split("distance")
+                url = link0 + "page=" + str(page_num) + "&distance" + link1
 
-            result = requests.get(url)
-            page = result.text
-            doc = soup(page, "html.parser")
-            items = [element for element in doc.find_all('div', {"class": "adlist--item--descarea"})]
+                result = requests.get(url)
+                page = result.text
+                doc = soup(page, "html.parser")
+                items = [element for element in doc.find_all('div', {"class": "adlist--item--descarea"})]
 
-            if len(items) > 0:
-                item = items[0] # get last item
-                item_time = item.find('div', {"class": "adlist--item--info--date"}).contents[0]
-                is_today, created_time = extract_today_created_time(item_time)
-                if is_today:
-                # if True:
-                    if is_new(created_time):
+                if len(items) > 0:
+                    item = items[0] # get last item
+                    item_time = item.find('div', {"class": "adlist--item--info--date"}).contents[0]
+                    is_today, created_time = extract_today_created_time(item_time)
+                    if is_today:
                     # if True:
-                        notifier.call(i, "FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
-                        update_log("SEND NOTIFICATION!")
-                    update_log("Last item for {} checked at {} in distance {} km is posted TODAY at: {}\n" \
-                                .format(query.upper(), datetime.now(), dist, str(created_time)))
+                        if is_new(created_time):
+                        # if True:
+                            notifier.call(i, "FOR EBAY-KLEINANZEIGEN: new {}".format(query.upper()))
+                            update_log("SEND NOTIFICATION!")
+                        update_log("Last item for {} checked at {} in distance {} km is posted TODAY at: {}\n" \
+                                    .format(query.upper(), datetime.now(), dist, str(created_time)))
+                    else:
+                        update_log("Last item for {} checked at {} in distance {} km is posted at: {}\n" \
+                                    .format(query.upper(), datetime.now(), dist, str(created_time)))
                 else:
-                    update_log("Last item for {} checked at {} in distance {} km is posted at: {}\n" \
-                                .format(query.upper(), datetime.now(), dist, str(created_time)))
-            else:
-                update_log("NO ITEM FOUND for {} checked at {} in distance {} km.\n" \
-                                .format(query.upper(), datetime.now(), dist))
-        update_log("\n")
-        processing_time = time.time() - start
-        time.sleep(max(0.01, interval_in_s - processing_time))
+                    update_log("NO ITEM FOUND for {} checked at {} in distance {} km.\n" \
+                                    .format(query.upper(), datetime.now(), dist))
+            update_log("\n")
+            processing_time = time.time() - start
+            time.sleep(max(0.01, interval_in_s - processing_time))
+        except:
+            update_log("TRY CATCH EXCEPTION \n")
