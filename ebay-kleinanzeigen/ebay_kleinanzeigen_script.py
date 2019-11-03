@@ -133,4 +133,4 @@ if __name__ == "__main__":
             processing_time = time.time() - start
             time.sleep(max(0.01, interval_in_s - processing_time))
         except:
-            update_log("TRY CATCH EXCEPTION \n")
+            update_log("TRY CATCH EXCEPTION checked at {} \n".format(datetime.now()))
