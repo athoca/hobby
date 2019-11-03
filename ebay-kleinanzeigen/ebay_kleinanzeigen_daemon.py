@@ -66,10 +66,13 @@ def update_log(message):
 def do_something():
     lat = "48.1151649"
     lng = "11.6981558"
-    queries = ["ikea skarsta", "bose revolve", "glasbild"]
+    # queries = ["ikea skarsta", "bose revolve", "glasbild"]
+    # distances = [20, 20, 20] # in km
+    # maxprices = [110, 110, 30] # in km
+    queries = ["ikea skarsta"]
+    distances = [20] # in km
+    maxprices = [120] # in km
     queries = ["+".join(query.split(" ")) for query in queries]
-    distances = [20, 20, 20] # in km
-    maxprices = [110, 110, 30] # in km
     page_num = 0
     interval_in_s = 30
 
