@@ -117,18 +117,21 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
 def do_something():
     interval_in_s = 15 # check every 15s
     while True:
-        start = time.time()
-        available_date = check_KRV_SCIF_available_date(TERMIN_URL, CASETYPES, ZONE)
-        if available_date is not None:
-            notifier.call(0, "FOR KVR RESIDENCE PERMIT: new available date {}." \
-                                .format(str(available_date)))
-            update_log("SEND NOTIFICATION!")
-        update_log("Last check at {}, available date is {}\n" \
-                                .format(datetime.now(), str(available_date)))
+        try:
+            start = time.time()
+            available_date = check_KRV_SCIF_available_date(TERMIN_URL, CASETYPES, ZONE)
+            if available_date is not None:
+                notifier.call(0, "FOR KVR RESIDENCE PERMIT: new available date {}." \
+                                    .format(str(available_date)))
+                update_log("SEND NOTIFICATION!")
+            update_log("Last check at {}, available date is {}\n" \
+                                    .format(datetime.now(), str(available_date)))
 
-        # update_log("\n")
-        processing_time = time.time() - start
-        time.sleep(max(0.01, interval_in_s - processing_time))
+            # update_log("\n")
+            processing_time = time.time() - start
+            time.sleep(max(0.01, interval_in_s - processing_time))
+        except:
+            update_log("TRY CATCH EXCEPTION checked at {} \n".format(datetime.now()))
 
 def run():
     with daemon.DaemonContext(pidfile=lockfile.FileLock('/tmp/terminvereinbarung.pid')):
