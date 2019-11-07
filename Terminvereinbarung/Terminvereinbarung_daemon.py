@@ -124,7 +124,7 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
         return available_date
 
 def do_something():
-    interval_in_s = 15 # check every 15s
+    interval_in_s = 5 # check every 15s
     while True:
         try:
             start = time.time()
