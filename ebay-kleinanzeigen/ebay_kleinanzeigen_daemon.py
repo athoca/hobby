@@ -69,9 +69,9 @@ def do_something():
     # queries = ["ikea skarsta", "bose revolve", "glasbild"]
     # distances = [20, 20, 20] # in km
     # maxprices = [110, 110, 30] # in km
-    queries = ["ikea skarsta"]
+    queries = ["skarsta"]
     distances = [20] # in km
-    maxprices = [120] # in km
+    maxprices = [120] # in eur
     queries = ["+".join(query.split(" ")) for query in queries]
     page_num = 0
     interval_in_s = 30
