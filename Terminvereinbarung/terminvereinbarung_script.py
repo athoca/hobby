@@ -108,7 +108,9 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     appoints = ast.literal_eval(appoints_line[right:left+1])
     
     appoints_dates = appoints[zone]['appoints']
+    # print(appoints_dates.keys())
     for key in appoints_dates.keys():
+        print(key)
         if len(appoints_dates[key]) > 0:
             available_date = key
             break
