@@ -41,17 +41,82 @@ def update_log(message):
         f.write(message)
 
 # For other termines, e.g An- oder Ummeldung - Einzelperson
-# TERMIN_URL = "https://www56.muenchen.de/termin/index.php?loc=BB"
-# CASETYPES = 'CASETYPES[An- oder Ummeldung - Einzelperson]'
-# ZONE = 'Termin Wartezone 1 P'
+TERMIN_URL = "https://www56.muenchen.de/termin/index.php?loc=BB"
+CASETYPES = 'CASETYPES[An- oder Ummeldung - Einzelperson]'
+ZONE = 'Termin Wartezone 1 P'
 
 # For SCIF
-TERMIN_URL = "https://www46.muenchen.de/termin/index.php?cts=1080627"
-CASETYPES = 'CASETYPES[Aufenthaltserlaubnis Blaue Karte EU]'
-ZONE = 'Termin Wartezone SCIF'
+#TERMIN_URL = "https://www46.muenchen.de/termin/index.php?cts=1080627"
+#CASETYPES = 'CASETYPES[Aufenthaltserlaubnis Blaue Karte EU]'
+#ZONE = 'Termin Wartezone SCIF'
+
+# def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
+#     available_date = None
+#     # Get information for KVR from
+#     # https://www46.muenchen.de/termin/index.php?cts=1080627"
+#     termin_url = termin_url
+    
+#     # First call to get cookies and __ncforminfo
+#     headers1 = {
+#         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
+#         'Connection' : 'keep-alive',
+#         'Cache-Control' : 'max-age=0',
+#         'Upgrade-Insecure-Requests' : '1',
+#         'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+#         'Accept-Encoding' : 'gzip, deflate, br',
+#         'Accept-Language' : 'en-US,en;q=0.9,de;q=0.8,fr;q=0.7,vi;q=0.6',
+#         'Cookie' : '_et_coid=e32c2d08fe2aec5f79ee9875c9f20463'
+#     }
+#     r1 = requests.get(termin_url, headers=headers1)
+#     page = r1.content
+#     doc = soup(page, "html.parser")
+#     elements = doc.findAll('input', {"name": "__ncforminfo"})[0]
+#     if len(elements) == 0:
+#         return available_date
+#     element = elements[0]
+
+#     # Second call to get available dates
+#     data = {}
+#     data['step'] = 'WEB_APPOINT_SEARCH_BY_CASETYPES'
+#     data[casetypes] = '1'
+#     data['__ncforminfo'] = element['value']
+
+#     headers2 = {
+#         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
+#         'Connection' : 'keep-alive',
+#         'Cache-Control' : 'max-age=0',
+#         'Upgrade-Insecure-Requests' : '1',
+#         'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+#         'Accept-Encoding' : 'gzip, deflate, br',
+#         'Accept-Language' : 'en-US,en;q=0.9,de;q=0.8,fr;q=0.7,vi;q=0.6',
+#     }
+
+#     r2 = requests.post(termin_url, cookies=r1.cookies, headers=headers2, data=data)
+#     page = r2.content
+#     page = page.decode("utf-8")
+
+#     appoints_line = None
+#     for item in page.split("\n"):
+#         if "jsonAppoints" in item:
+#             appoints_line = item.strip()
+#             break
+#     if appoints_line is None:
+#         return available_date
+
+#     right = appoints_line.find('{')
+#     left = appoints_line.rfind('}')
+#     appoints = ast.literal_eval(appoints_line[right:left+1])
+    
+#     appoints_dates = appoints[zone]['appoints']
+#     for key in appoints_dates.keys():
+#         if len(appoints_dates[key]) > 0:
+#             available_date = key
+#             break
+#     return available_date
 
 def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     available_date = None
+
     # Get information for KVR from
     # https://www46.muenchen.de/termin/index.php?cts=1080627"
     termin_url = termin_url
@@ -70,11 +135,10 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     r1 = requests.get(termin_url, headers=headers1)
     page = r1.content
     doc = soup(page, "html.parser")
-    elements = doc.findAll('input', {"name": "__ncforminfo"})[0]
+    elements = doc.findAll('input', {"name": "__ncforminfo"})
     if len(elements) == 0:
         return available_date
     element = elements[0]
-
     # Second call to get available dates
     data = {}
     data['step'] = 'WEB_APPOINT_SEARCH_BY_CASETYPES'
@@ -102,17 +166,26 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
             break
     if appoints_line is None:
         return available_date
-
+    
     right = appoints_line.find('{')
     left = appoints_line.rfind('}')
     appoints = ast.literal_eval(appoints_line[right:left+1])
     
     appoints_dates = appoints[zone]['appoints']
+    # print(appoints_dates.keys())
+    available_dates = []
     for key in appoints_dates.keys():
+        # print(key)
         if len(appoints_dates[key]) > 0:
-            available_date = key
-            break
-    return available_date
+            available_dates.append(datetime.strptime(key, '%Y-%m-%d'))
+    
+    if len(available_dates) == 0:
+        return available_date
+    else:
+        available_dates.sort()
+        available_date = available_dates[0]
+        print(available_date)
+        return available_date
 
 def do_something():
     interval_in_s = 15 # check every 15s
