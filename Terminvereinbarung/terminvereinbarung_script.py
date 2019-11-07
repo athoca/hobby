@@ -109,12 +109,19 @@ def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     
     appoints_dates = appoints[zone]['appoints']
     # print(appoints_dates.keys())
+    available_dates = []
     for key in appoints_dates.keys():
-        print(key)
+        # print(key)
         if len(appoints_dates[key]) > 0:
-            available_date = key
-            break
-    return available_date
+            available_dates.append(datetime.strptime(key, '%Y-%m-%d'))
+    
+    if len(available_dates) == 0:
+        return available_date
+    else:
+        available_dates.sort()
+        available_date = available_dates[0]
+        print(available_date)
+        return available_date
 
 if __name__ == "__main__":
     with open("/tmp/terminvereinbarung.pid", "w") as f:
