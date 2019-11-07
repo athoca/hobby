@@ -41,14 +41,14 @@ def update_log(message):
         f.write(message)
 
 # For other termines, e.g An- oder Ummeldung - Einzelperson
-# TERMIN_URL = "https://www56.muenchen.de/termin/index.php?loc=BB"
-# CASETYPES = 'CASETYPES[An- oder Ummeldung - Einzelperson]'
-# ZONE = 'Termin Wartezone 1 P'
+TERMIN_URL = "https://www56.muenchen.de/termin/index.php?loc=BB"
+CASETYPES = 'CASETYPES[An- oder Ummeldung - Einzelperson]'
+ZONE = 'Termin Wartezone 1 P'
 
 # For SCIF
-TERMIN_URL = "https://www46.muenchen.de/termin/index.php?cts=1080627"
-CASETYPES = 'CASETYPES[Aufenthaltserlaubnis Blaue Karte EU]'
-ZONE = 'Termin Wartezone SCIF'
+#TERMIN_URL = "https://www46.muenchen.de/termin/index.php?cts=1080627"
+#CASETYPES = 'CASETYPES[Aufenthaltserlaubnis Blaue Karte EU]'
+#ZONE = 'Termin Wartezone SCIF'
 
 def check_KRV_SCIF_available_date(termin_url, casetypes, zone):
     available_date = None
