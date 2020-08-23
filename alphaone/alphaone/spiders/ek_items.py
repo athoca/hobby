@@ -14,6 +14,8 @@ class EkItemsSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse_item)
 
     def parse_item(self, response):
+        # https://stackoverflow.com/questions/55658640/how-to-know-which-user-agent-is-currently-used-in-the-scrapy-spider
+        print("\n\ncurrent user-agent:{}\n\n".format(response.request.headers['User-Agent']))
         filename = 'ek_items.txt'
         with open(filename, 'wb') as f:
             f.write(b'1477722139')
