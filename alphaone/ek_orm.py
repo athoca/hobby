@@ -80,3 +80,6 @@ class EKMonitoringItem(Base):
 from sqlalchemy import create_engine
 engine = create_engine('sqlite:////Users/chaunguyen/workspace/hobby/alphaone/alphaone.db', echo=True)
 
+from sqlalchemy.orm import sessionmaker
+Session = sessionmaker(bind=engine)
+session = Session()
