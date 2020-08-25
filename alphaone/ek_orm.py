@@ -3,7 +3,7 @@ import sqlalchemy
 sqlalchemy.__version__
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, SmallInteger, BigInteger
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, SmallInteger, BigInteger, Date
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -21,7 +21,7 @@ class EKUser(Base):
     id = Column(Integer, primary_key=True, autoincrement=False)  # ebayK user Id
     name = Column(String(50), nullable=False)
     address = Column(String(255), nullable=False)
-    active_date = Column(DateTime, nullable=False)
+    active_date = Column(Date, nullable=False)
     phone = Column(String(30), nullable=True)
     email = Column(String(255), nullable=True)
 

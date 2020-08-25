@@ -14,11 +14,13 @@ from pathlib import Path
 import threading
 
 from ek_orm import EKMonitoringItem, session
+from ek_orm import EKUser, EKItem
 
 
 IMAGE_FOLDER = "images"
 
 crawl_next_call = time.time()
+crawl_frequence_in_seconds = 60 # every minute
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1',
@@ -111,71 +113,83 @@ def crawl_items():
     if len(items) > 0:
         n = min(2, len(items)-1)
         for item in items[:n]:
+            #TODO: skip item if any exception.
             item_url = _extract_item_url(item)
             item_id = _extract_item_id(item)
-            # TODO: if item_id exists, stop here
-            
-            item_stadt = _extract_item_stadt(item)
-            release_time = _extract_item_release_time(item)
-            item_title = _extract_item_title(item)
-            item_price = _extract_item_price(item)
+            if session.query(EKItem).filter_by(id=item_id).scalar() is None:
+                item_stadt = _extract_item_stadt(item)
+                release_time = _extract_item_release_time(item)
+                item_title = _extract_item_title(item)
+                item_price = _extract_item_price(item)
 
-            print(item_url)
-            print(item_id)
-            print(release_time)
-            print(item_stadt)
-            print(item_title)
-            print(item_price)
+                print(item_url)
+                print(item_id)
+                print(release_time)
+                print(item_stadt)
+                print(item_title)
+                print(item_price)
 
-            item_category, item_subcategory, item_description, \
-            image_nb, image_urls, seller_id = _query_item_detail(item_url)
+                item_category, item_subcategory, item_description, \
+                image_nb, image_urls, seller_id = _query_item_detail(item_url)
 
-            print(item_category)
-            print(item_subcategory)
-            print(item_description)
-            print(image_nb)
-            print(image_urls)
-            print(seller_id)
-            print("\n")
-            #TODO: skip next steps if if any exception.
+                print(item_category)
+                print(item_subcategory)
+                print(item_description)
+                print(image_nb)
+                print(image_urls)
+                print(seller_id)
+                print("\n")
 
-            # Asynchronously download and store images
-            storage_folder = os.path.join(IMAGE_FOLDER, item_id)
-            Path(storage_folder).mkdir(parents=True, exist_ok=True)
-            threads = []
-            for k,img_url in enumerate(image_urls):
-                filename = os.path.join(storage_folder, "{}_{}.jpg".format(item_id, k))
-                t = threading.Thread(target=_download_image, args=(img_url, filename))
-                t.start()
-                threads.append(t)
-            # wait for all threads to finish
-            # You can continue doing whatever you want and
-            # join the threads when you finally need the results.
-            # They will fatch your urls in the background without
-            # blocking your main application.
-            map(lambda t: t.join(), threads)
-            print("Finish downloading images!")
-            print("\n")
+                new_item = EKItem(id=item_id, title=item_title, price=item_price, \
+                    release_date=release_time, stadt=item_stadt, category=item_category, sub_category=item_subcategory, \
+                    description=item_description, image_nb=image_nb, seller_id=seller_id)
+                
+                new_monitoring_item = EKMonitoringItem(item_id=int(item_id), seller_id=int(seller_id), \
+                    next_count_time=release_time, count_duration=0)
+                session.add(new_item)
+                session.add(new_monitoring_item)
 
-            # Get user information
-            seller_url = "https://m.ebay-kleinanzeigen.de/s-anzeigen/deutschland/c0-l0?userIds={}".format(seller_id)
-            response = requests.get(seller_url, headers=headers)
-            page = response.text
-            doc = soup(page, "html.parser")
-            seller_name = doc.find('h2',{'class': 'userprofile--title'}).text
-            seller_address = item_stadt
-            seller_active_date = doc.find('span',{'class': 'userprofile--usersince'}).text
-            seller_active_date = ''.join(c for c in seller_active_date if is_digit_or_point(c))
-            print(seller_name)
-            print(seller_address)
-            print(seller_active_date)
 
-            new_monitoring_item = EKMonitoringItem(item_id=int(item_id), seller_id=int(seller_id), \
-                next_count_time=release_time, count_duration=0)
-            session.add(new_monitoring_item)
-            session.commit()
-            print("store new monitoring item.")
-            print("***********************************************")
+                # Get user information
+                if session.query(EKUser).filter_by(id=seller_id).scalar() is None:
+                    seller_url = "https://m.ebay-kleinanzeigen.de/s-anzeigen/deutschland/c0-l0?userIds={}".format(seller_id)
+                    response = requests.get(seller_url, headers=headers)
+                    page = response.text
+                    doc = soup(page, "html.parser")
+                    seller_name = doc.find('h2',{'class': 'userprofile--title'}).text
+                    seller_address = item_stadt
+                    seller_active_date = doc.find('span',{'class': 'userprofile--usersince'}).text
+                    seller_active_date = ''.join(c for c in seller_active_date if is_digit_or_point(c))
+                    seller_active_date = datetime.strptime(seller_active_date, '%d.%m.%Y').date()
+                    print(seller_name)
+                    print(seller_address)
+                    print(seller_active_date)
+                    new_user = EKUser(id=seller_id, name=seller_name, address=seller_address, active_date=seller_active_date)
+                    session.add(new_user)
+                session.commit()
+
+                print("Store new item, user and monitoring item into database.")
+
+
+                # Asynchronously download and store images
+                storage_folder = os.path.join(IMAGE_FOLDER, item_id)
+                Path(storage_folder).mkdir(parents=True, exist_ok=True)
+                threads = []
+                for k,img_url in enumerate(image_urls):
+                    filename = os.path.join(storage_folder, "{}_{}.jpg".format(item_id, k))
+                    t = threading.Thread(target=_download_image, args=(img_url, filename))
+                    t.start()
+                    threads.append(t)
+                # wait for all threads to finish
+                # You can continue doing whatever you want and
+                # join the threads when you finally need the results.
+                # They will fatch your urls in the background without
+                # blocking your main application.
+                map(lambda t: t.join(), threads)
+                print("Finish downloading images!")
+                print("***********************************************")
+            else:
+                break
 
 def is_digit_or_point(c):
     return c.isdigit() or c=='.'
@@ -190,6 +204,6 @@ def _download_image(img_url, dest):
 if __name__ == "__main__":
     while True:
         crawl_items()
-        crawl_next_call = crawl_next_call+60
+        crawl_next_call = crawl_next_call + crawl_frequence_in_seconds
         sleep_duration = max(crawl_next_call - time.time(), 0.01)
         time.sleep(sleep_duration)
