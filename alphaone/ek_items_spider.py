@@ -114,6 +114,7 @@ def crawl_items():
             item_url = _extract_item_url(item)
             item_id = _extract_item_id(item)
             # TODO: if item_id exists, stop here
+            
             item_stadt = _extract_item_stadt(item)
             release_time = _extract_item_release_time(item)
             item_title = _extract_item_title(item)
@@ -175,8 +176,6 @@ def crawl_items():
             session.commit()
             print("store new monitoring item.")
             print("***********************************************")
-            
-
 
 def is_digit_or_point(c):
     return c.isdigit() or c=='.'
