@@ -209,14 +209,6 @@ def crawl_items():
                         # Get user information
                         new_user = None
                         if session.query(EKUser).filter_by(id=seller_id).scalar() is None:
-                            # seller_url = "https://m.ebay-kleinanzeigen.de/s-anzeigen/deutschland/c0-l0?userIds={}".format(seller_id)
-                            # response = requests.get(seller_url, headers=headers)
-                            # page = response.text
-                            # doc = soup(page, "html.parser")
-                            # seller_name = doc.find('h2',{'class': 'userprofile--title'}).text
-                            # seller_active_date = doc.find('span',{'class': 'userprofile--usersince'}).text
-                            # seller_active_date = ''.join(c for c in seller_active_date if is_digit_or_point(c))
-                            # seller_active_date = datetime.strptime(seller_active_date, '%d.%m.%Y').date()
                             seller_address = item_stadt
                             seller_name, seller_active_date = _query_user_detail(seller_id)
                             logging.info(seller_name)
