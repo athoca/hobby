@@ -8,7 +8,7 @@ import redis
 r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
 crawl_next_call = time.time()
-crawl_frequence_in_seconds = 60*5 # every 5 minutes
+crawl_frequence_in_seconds = 60 # every minute
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1',
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             session.add(EKViewCount(count=view_count, at=duration, item_id=item.item_id))
             session.commit()
         
-        print("UPDATE COUNT!")
+        print("UPDATE COUNT at {}!".format(now))
         crawl_next_call = crawl_next_call + crawl_frequence_in_seconds
         sleep_duration = max(crawl_next_call - time.time(), 0.01)
         time.sleep(sleep_duration)
