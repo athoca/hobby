@@ -20,8 +20,8 @@ from ek_orm import EKUser, EKItem
 
 
 IMAGE_FOLDER = "images"
-CRAWL_FREQUENCE_IN_SECONDS = 60 # every minute
-ITEM_REQUEST_PAUSE_IN_SECONDS = 1
+CRAWL_FREQUENCE_IN_SECONDS = 60
+ITEM_REQUEST_PAUSE_IN_SECONDS = 5
 
 crawl_next_call = time.time()
 
@@ -172,6 +172,7 @@ def _query_user_detail(seller_id):
     return seller_name, seller_active_date
 
 def crawl_items():
+    global access_denied_plus_in_second
     logging.info("::::Start crawling...")
     try:
         items = _query_items()
@@ -286,6 +287,7 @@ if __name__ == "__main__":
         crawl_items()
         crawl_next_call = crawl_next_call + CRAWL_FREQUENCE_IN_SECONDS
         sleep_duration = max(crawl_next_call - time.time(), 0.01)
+        logging.debug(crawl_next_call - time.time())
         time.sleep(sleep_duration)
     
     
