@@ -30,10 +30,10 @@ class SearchCrawler():
     lasttime_items = []
     lasttime = None
     lasttime_news = 0
-
+    #TODO: update rule for is_next
     @classmethod
     def is_next(cls):
-        logging.debug("Last time called: {}".format(cls.lasttime))
+        logging.debug("Last time SEARCH called: {}".format(cls.lasttime))
         return True
 
     def __init__(self, url=None, headers=None):
@@ -46,7 +46,7 @@ class SearchCrawler():
             response = requests.get(self.url, headers=self.headers)
             if response.status_code != 200:
                 logging.debug(":::: Query SEARCH UNSUCCESSFUL:::: Code={}".format((response.status_code)))
-                return
+                return []
             page = response.text
             doc = soup(page, "html.parser")
             items = [element for element in doc.find_all('li', {"class": "j-adlistitem adlist--item"})]
@@ -101,7 +101,7 @@ class SearchCrawler():
         for k, item in enumerate(items[:]):
             try:
                 item_url, item_id, item_stadt, release_time, item_title, item_price = self.extract_item_info(item)
-                self.store_items_database(item_id, item_title, item_price, release_time, item_stadt)
+                self.store_items_database(item_id, item_url, item_title, item_price, release_time, item_stadt)
                 now_items.append(item_id)
                 if item_id not in self.cls.lasttime_items:
                     news_count += 1
@@ -116,10 +116,10 @@ class SearchCrawler():
         self.cls.lasttime_news = news_count
         # TODO: add save one image
 
-    def store_items_database(self, item_id, item_title, item_price, release_time, item_stadt):
+    def store_items_database(self, item_id, item_url, item_title, item_price, release_time, item_stadt):
         if session.query(EKItem).filter_by(id=item_id).scalar() is None:
             # Commit new item into database, after all information exist
-            new_item = EKItem(id=item_id, title=item_title, price=item_price, release_date=release_time, stadt=item_stadt)
+            new_item = EKItem(id=item_id, url = item_url, title=item_title, price=item_price, release_date=release_time, stadt=item_stadt)
             new_monitoring_item = EKMonitoringItem(item_id=int(item_id), next_count_time=release_time, count_duration=0)
             session.add(new_item)
             session.add(new_monitoring_item)

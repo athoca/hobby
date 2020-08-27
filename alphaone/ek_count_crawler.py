@@ -38,7 +38,7 @@ class CountCrawler():
 
     @classmethod
     def is_next(cls):
-        logging.debug("Last time called: {}".format(cls.lasttime))
+        logging.debug("Last time VIEW COUNT called: {}".format(cls.lasttime))
         if cls.buffer_items:
             return True
         else:
@@ -72,8 +72,11 @@ class CountCrawler():
                 if res.status_code == 200:
                     r.hmset(item_id, res.cookies.get_dict())
             if res.status_code == 200:
-                return res.json()['counter']
+                count = res.json()['counter']
+                logging.debug(":::: Finish query count SUCCESSFUL: {}".format(view_count_url))
+                return count
             else:
+                logging.debug(":::: Query COUNT UNSUCCESSFUL:::: Code={}".format((res.status_code)))
                 return None
         except Exception as e:
             print(e)
