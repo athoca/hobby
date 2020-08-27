@@ -21,7 +21,7 @@ class EKUser(Base):
     id = Column(Integer, primary_key=True, autoincrement=False)  # ebayK user Id
     name = Column(String(50), nullable=False)
     address = Column(String(255), nullable=False)
-    active_date = Column(Date, nullable=False)
+    active_date = Column(Date, nullable=True)
     phone = Column(String(30), nullable=True)
     email = Column(String(255), nullable=True)
 
@@ -29,17 +29,18 @@ class EKUser(Base):
         return "https://www.ebay-kleinanzeigen.de/s-bestandsliste.html?userId={}".format(self.id)
 
     def __repr__(self):
-        return "<EKUser(id={}, name={}, active from {})> \n  url: {}".format(self.id, self.name, self.active_date, self._get_url())
+        return "<EKUser(id={}, name={})> \n  url: {}".format(self.id, self.name, self._get_url())
 
 class EKItem(Base):
     __tablename__ = 'ek_items'
     id = Column(BigInteger, primary_key=True, autoincrement=False)
     title = Column(String(255), nullable=False)
+    url = Column(String(300), nullable=False)
     price = Column(Float, nullable=False)
     release_date = Column(DateTime, nullable=False)
     stadt = Column(String(255), nullable=False)
-    category = Column(String(255), nullable=False)
-    sub_category = Column(String(255), nullable=False)
+    category = Column(String(255), nullable=True)
+    sub_category = Column(String(255), nullable=True)
     status = Column(String(30), nullable=True)
     description =Column(Text, nullable=True)
     image_nb = Column(Integer, nullable=True)
@@ -51,7 +52,7 @@ class EKItem(Base):
         return "https://www.ebay-kleinanzeigen.de/s-anzeige/{}".format(self.id)
 
     def __repr__(self):
-        return "<EKItem(id={}, title={}, status={})> \n  url: {}".format(self.id, self.title, self.status, self._get_url())
+        return "<EKItem(id={}, title={}, status={})> \n  url: {}".format(self.id, self.title, self.status, self.url)
 
 EKUser.items = relationship("EKItem", order_by=EKItem.id, back_populates="seller")
 
@@ -70,9 +71,9 @@ class EKMonitoringItem(Base):
     __tablename__ = 'ek_monitoring_items'
     id = Column(BigIntegerType, primary_key=True)   
     item_id = Column(BigInteger, nullable=False)
-    seller_id = Column(Integer, nullable=False)
     next_count_time = Column(DateTime, nullable=False)
     count_duration = Column(Integer, nullable=False)
+    seller_id = Column(Integer, nullable=True)
 
     def __repr__(self):
         return "<EKMonitoringItem(item_id={}, seller_id={})>".format(self.item_id, self.seller_id)
@@ -83,10 +84,3 @@ engine = create_engine('sqlite:////Users/chaunguyen/workspace/hobby/alphaone/alp
 from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
 session = Session()
-
-# import logging
-# logging.basicConfig()
-# sqla_logger = logging.getLogger('sqlalchemy')
-# sqla_logger.propagate = False
-# sqla_logger.setLevel(logging.CRITICAL)
-# sqla_logger.addHandler(logging.FileHandler('sqla.log'))

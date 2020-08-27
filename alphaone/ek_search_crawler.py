@@ -34,6 +34,7 @@ class SearchCrawler():
     @classmethod
     def is_next(cls):
         logging.debug("Last time SEARCH called: {}".format(cls.lasttime))
+        # if lasttime_news = 0 and lasttime_items = [] => last call is not succeful yet
         return True
 
     def __init__(self, url=None, headers=None):

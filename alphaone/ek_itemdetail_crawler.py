@@ -48,7 +48,7 @@ class ItemDetailCrawler():
     """ Crawl item detail information
     """
     lasttime = None
-    MAX_BUFFER_ITEMS = 2
+    MAX_BUFFER_ITEMS = 20
     buffer_items = []
 
     @classmethod
@@ -64,7 +64,7 @@ class ItemDetailCrawler():
                 return False 
     @classmethod
     def update_buffer_items(cls):
-        # Get all items need to count now
+        # Get all items need to update now
         updating_items = session.query(EKItem).\
                                     filter(EKItem.seller_id == None).\
                                     limit(cls.MAX_BUFFER_ITEMS)
@@ -89,8 +89,8 @@ class ItemDetailCrawler():
             response = requests.get(item_url, headers=self.headers)
             if response.status_code != 200:
                 logging.debug(":::: Query ITEM DETAIL UNSUCCESSFUL:::: Code={}".format((response.status_code)))
-                return None
-            _save_html(response, "test.html")
+                return [None, None, None, None, None, None, None]
+            # _save_html(response, "test.html")
             page = response.text
             doc = soup(page, "html.parser")
             javascript = doc.find('script',{'type':'text/javascript'})
@@ -140,19 +140,19 @@ class ItemDetailCrawler():
             item = self.cls.buffer_items.pop(0)
             item_category, item_subcategory, item_description, image_nb, image_urls, seller_id, seller_name = self.execute_request(item.url)
             self.cls.lasttime = datetime.now()
-            item.item_category = item_category
-            item.item_subcategory = item_subcategory
-            item.item_description = item_description
-            item.image_nb = image_nb
-            item.seller_id = seller_id
-            self.store_images(image_urls, item.id)
-            # Get user information
-            if session.query(EKUser).filter_by(id=seller_id).scalar() is None:
-                seller_address = item.stadt
-                new_user = EKUser(id=seller_id, name=seller_name, address=seller_address)
-                session.add(new_user)
-            session.commit()    # both Update item detail and add user
-            logging.info("::::SUCCESSFUL Store new item detail and user into database.")
-
+            if seller_id: # if execute request not return None
+                item.item_category = item_category
+                item.item_subcategory = item_subcategory
+                item.item_description = item_description
+                item.image_nb = image_nb
+                item.seller_id = seller_id
+                self.store_images(image_urls, item.id)
+                # Get user information
+                if session.query(EKUser).filter_by(id=seller_id).scalar() is None:
+                    seller_address = item.stadt
+                    new_user = EKUser(id=seller_id, name=seller_name, address=seller_address)
+                    session.add(new_user)
+                session.commit()    # both Update item detail and add user
+                logging.info("::::SUCCESSFUL Store new item detail and user into database.")
         else:
             logging.debug(":::::WARNING: Count item buffer is empty while is_next return True:::::")
