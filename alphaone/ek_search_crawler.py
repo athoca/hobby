@@ -54,7 +54,7 @@ class SearchCrawler():
             if response.status_code != 200:
                 logging.debug(":::: Query SEARCH UNSUCCESSFUL:::: Code={}".format((response.status_code)))
                 return []
-            _save_html(response, "test.html")
+            # _save_html(response, "test.html")
             page = response.text
             doc = soup(page, "html.parser")
             items = [element for element in doc.find_all('li', {"class": "j-adlistitem adlist--item"})]
@@ -127,7 +127,6 @@ class SearchCrawler():
         self.cls.lasttime_items = now_items
         self.cls.lasttime = datetime.now()
         self.cls.lasttime_news = news_count
-        # TODO: add save one image
 
     def store_items_database(self, item_id, item_url, item_title, item_price, release_time, item_stadt):
         if session.query(EKItem).filter_by(id=item_id).scalar() is None:
