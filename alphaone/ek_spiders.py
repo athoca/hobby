@@ -9,7 +9,7 @@ from ek_itemdetail_crawler import ItemDetailCrawler
 from ek_userdetail_crawler import UserDetailCrawler
 
 
-CRAWL_FREQUENCE_IN_SECONDS = 5
+CRAWL_FREQUENCE_IN_SECONDS = 7
 crawl_next_call = time.time()
 
 def get_next_crawler():

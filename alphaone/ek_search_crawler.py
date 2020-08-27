@@ -3,8 +3,14 @@ from datetime import datetime
 from datetime import timedelta
 import requests
 from bs4 import BeautifulSoup as soup
+import os
+from PIL import Image
+from io import BytesIO
+from pathlib import Path
+import threading
 
 from ek_orm import EKMonitoringItem, EKItem, session
+from ek_itemdetail_crawler import _download_image, _save_html, IMAGE_FOLDER
 
 
 HEADERS = {
@@ -48,6 +54,7 @@ class SearchCrawler():
             if response.status_code != 200:
                 logging.debug(":::: Query SEARCH UNSUCCESSFUL:::: Code={}".format((response.status_code)))
                 return []
+            _save_html(response, "test.html")
             page = response.text
             doc = soup(page, "html.parser")
             items = [element for element in doc.find_all('li', {"class": "j-adlistitem adlist--item"})]
@@ -93,6 +100,10 @@ class SearchCrawler():
         if not item_price:
             item_price = -1.0 # not specified
         return item_price 
+    
+    def _extract_image_url(self, item):
+        image_url = item.find('img', {"class": "lazy"}).attrs['data-src']
+        return image_url
 
     def run(self):
         logging.info("Running SEARCH crawler ...")
@@ -101,10 +112,11 @@ class SearchCrawler():
         items = self.execute_request()
         for k, item in enumerate(items[:]):
             try:
-                item_url, item_id, item_stadt, release_time, item_title, item_price = self.extract_item_info(item)
-                self.store_items_database(item_id, item_url, item_title, item_price, release_time, item_stadt)
+                item_url, item_id, item_stadt, release_time, item_title, item_price, image_url = self.extract_item_info(item)
                 now_items.append(item_id)
                 if item_id not in self.cls.lasttime_items:
+                    self.store_items_database(item_id, item_url, item_title, item_price, release_time, item_stadt)
+                    self.store_an_image(image_url, item_id)
                     news_count += 1
                     logging.debug("New item id = {}".format(item_id))
                 else:
@@ -134,4 +146,18 @@ class SearchCrawler():
         release_time = self._extract_item_release_time(item)
         item_title = self._extract_item_title(item)
         item_price = self._extract_item_price(item)
-        return item_url, item_id, item_stadt, release_time, item_title, item_price
+        image_url = self._extract_image_url(item)
+        return item_url, item_id, item_stadt, release_time, item_title, item_price, image_url
+
+    def store_an_image(self, image_url, item_id):
+        # Asynchronously download and store images
+        if image_url.endswith('35.JPG'): # magic name for not None image
+            storage_folder = os.path.join(IMAGE_FOLDER, str(item_id))
+            Path(storage_folder).mkdir(parents=True, exist_ok=True)
+            try:
+                filename = os.path.join(storage_folder, "{}_.jpg".format(item_id))
+                _download_image(image_url, filename)
+            except Exception as e:
+                logging.debug(e)
+                logging.debug(":::: Download IMAGES UNSUCCESSFUL")
+            logging.debug("::::Finish downloading images of {}!".format(item_id))
