@@ -98,6 +98,7 @@ class CountCrawler():
         else:
             logging.debug(":::::WARNING: Count item buffer is empty while is_next return True:::::")
     
+    #TODO: update rule to calculate next count time
     def get_next_count_time(self, count_duration, count_time):
         if count_duration < 1440:
             next_count_duration = count_duration + 60           # check every hour first day
