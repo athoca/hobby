@@ -85,8 +85,8 @@ class UserDetailCrawler():
             self.cls.lasttime = datetime.now()
             if seller_active_date:
                 seller.active_date = seller_active_date
-            session.commit()    # Update user
-            logging.info("::::SUCCESSFUL Store new user detail into database.")
+                session.commit()    # Update user
+                logging.info("::::SUCCESSFUL Store new user detail into database.")
         else:
             logging.debug(":::::WARNING: Count item buffer is empty while is_next return True:::::")
 

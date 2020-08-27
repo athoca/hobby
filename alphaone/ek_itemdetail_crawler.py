@@ -132,7 +132,6 @@ class ItemDetailCrawler():
             logging.debug(e)
             logging.debug(":::: Download IMAGES UNSUCCESSFUL")
         logging.info("::::Finish downloading images of {}!".format(item_id))
-        logging.info("***********************************************")
 
     def run(self):
         logging.info("Running ITEM DETAIL crawler ...")
