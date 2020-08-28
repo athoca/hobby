@@ -32,17 +32,17 @@ class DoNothingCrawler():
 
 if __name__ == "__main__":
     while True:
-        try:
-            crawler = get_next_crawler()
-            status_code = crawler.run()
-            crawl_next_call = crawl_next_call + CRAWL_FREQUENCE_IN_SECONDS
-            sleep_duration = max(crawl_next_call - time.time(), 0.001)
-            logging.debug("Time to next crawling turn = {}.".format(crawl_next_call - time.time()))
-            logging.info("*********************************************************************************************")
-            time.sleep(sleep_duration)
-        except Exception as e:
-            logging.debug(e)
-            logging.info("I pass the crawling turn at {} and waiting for {}.".format(time.time(), CRAWL_FREQUENCE_IN_SECONDS))
-            logging.info("*********************************************************************************************")
-            time.sleep(CRAWL_FREQUENCE_IN_SECONDS)
+        # try:
+        crawler = get_next_crawler()
+        status_code = crawler.run()
+        crawl_next_call = crawl_next_call + CRAWL_FREQUENCE_IN_SECONDS
+        sleep_duration = max(crawl_next_call - time.time(), 0.001)
+        logging.debug("Time to next crawling turn = {}.".format(crawl_next_call - time.time()))
+        logging.info("*********************************************************************************************")
+        time.sleep(sleep_duration)
+        # except Exception as e:
+        #     logging.debug(e)
+        #     logging.info("I pass the crawling turn at {} and waiting for {}.".format(time.time(), CRAWL_FREQUENCE_IN_SECONDS))
+        #     logging.info("*********************************************************************************************")
+        #     time.sleep(CRAWL_FREQUENCE_IN_SECONDS)
 

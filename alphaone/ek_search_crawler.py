@@ -8,6 +8,7 @@ from PIL import Image
 from io import BytesIO
 from pathlib import Path
 import threading
+import collections
 
 from ek_orm import EKMonitoringItem, EKItem, session
 from ek_itemdetail_crawler import _download_image, _save_html, IMAGE_FOLDER
@@ -33,15 +34,55 @@ class SearchUrlException(Exception):
 class SearchCrawler():
     """ Crawl list of new item_id with basic information
     """
-    lasttime_items = []
-    lasttime = None
-    lasttime_news = 0
-    #TODO: update rule for is_next
+    last_search_items = []
+    # lasttime = None
+    # lasttime_news = 0
+    nb_news_deque = collections.deque(maxlen=20)
+    time_deque = collections.deque(maxlen=20)
     @classmethod
     def is_next(cls):
-        logging.debug("Last time SEARCH called: {}".format(cls.lasttime))
-        # if lasttime_news = 0 and lasttime_items = [] => last call is not succeful yet
-        return True
+        STANDARD_DURATION = 30
+        MAX_DURATION = 60*30    # 30 MINUTES
+        NB_ITEM_EACH_TURN = 30
+        if cls.time_deque:
+            logging.debug("Last time SEARCH called: {}".format(cls.time_deque[-1]))
+        else:
+            logging.debug("First time SEARCH called.")
+        # last_search_items = [] => last call is not succeful yet, len(time_deque) == 0 => First call
+        if not cls.last_search_items or len(cls.time_deque) == 0:
+            return True
+        last_time = cls.time_deque[-1]
+        next_duration = STANDARD_DURATION
+        if len(cls.time_deque) < 5:
+            return (datetime.now() - last_time).seconds > STANDARD_DURATION   # first 5 times, call every 60 seconds
+        else:
+            # neu so news trong last 1 turn > 4/5*30 thi se giam theo ty le thoi gian de giu la 2/3
+            if cls.nb_news_deque[-1] > NB_ITEM_EACH_TURN * 4/5:
+                last_duration = (last_time - cls.time_deque[-2]).seconds
+                next_duration = last_duration * (2/3*NB_ITEM_EACH_TURN)/cls.nb_news_deque[-1]
+                logging.debug("TIME TO NEXT SEARCH: {}".format(next_duration))
+                return (datetime.now() - last_time).seconds > min(next_duration, MAX_DURATION)
+            # neu so news trong 1 turn < 1/3 thi se cong tong thoi gian cac turn truoc de so luong > 1/2
+            elif cls.nb_news_deque[-1] < NB_ITEM_EACH_TURN * 1/3:
+                enough_items = False
+                items_sum = 0
+                next_duration = 0
+                for i, nb_news in enumerate(reversed(cls.nb_news_deque)):
+                    items_sum += nb_news
+                    if items_sum > NB_ITEM_EACH_TURN * 4/5:
+                        break
+                    if i == len(cls.time_deque) - 1: # prevent out of range
+                        break
+                    k = -1 - i
+                    next_duration += (cls.time_deque[k] - cls.time_deque[k-1]).seconds
+                    if items_sum > NB_ITEM_EACH_TURN * 1/2:
+                        break
+                logging.debug("TIME TO NEXT SEARCH: {}".format(next_duration))
+                return (datetime.now() - last_time).seconds > min(next_duration, MAX_DURATION)
+            else:
+                next_duration = (cls.time_deque[-1] - cls.time_deque[-2]).seconds 
+                logging.debug("TIME TO NEXT SEARCH: {}".format(next_duration))
+                return (datetime.now() - last_time).seconds > min(next_duration, MAX_DURATION)
 
     def __init__(self, url=None, headers=None):
         self.url = url or "https://m.ebay-kleinanzeigen.de/s-anzeigen/multimedia-elektronik-80331/c161-l6443?distance=100"
@@ -114,7 +155,7 @@ class SearchCrawler():
             try:
                 item_url, item_id, item_stadt, release_time, item_title, item_price, image_url = self.extract_item_info(item)
                 now_items.append(item_id)
-                if item_id not in self.cls.lasttime_items:
+                if item_id not in self.cls.last_search_items:
                     self.store_items_database(item_id, item_url, item_title, item_price, release_time, item_stadt)
                     self.store_an_image(image_url, item_id)
                     news_count += 1
@@ -124,9 +165,9 @@ class SearchCrawler():
             except Exception as e:
                 logging.debug(e)
                 logging.debug(":::: I am continue, pass adding item: {}".format(item_url))
-        self.cls.lasttime_items = now_items
-        self.cls.lasttime = datetime.now()
-        self.cls.lasttime_news = news_count
+        self.cls.last_search_items = now_items
+        self.cls.time_deque.append(datetime.now())
+        self.cls.nb_news_deque.append(news_count)
 
     def store_items_database(self, item_id, item_url, item_title, item_price, release_time, item_stadt):
         if session.query(EKItem).filter_by(id=item_id).scalar() is None:
