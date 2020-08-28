@@ -47,6 +47,7 @@ class ItemUrlException(Exception):
 class ItemDetailCrawler():
     """ Crawl item detail information
     """
+    ITEM_REQUEST_NB = 0
     lasttime = None
     MAX_BUFFER_ITEMS = 20
     buffer_items = []
@@ -134,6 +135,7 @@ class ItemDetailCrawler():
         logging.info("::::Finish downloading images of {}!".format(item_id))
 
     def run(self):
+        self.cls.ITEM_REQUEST_NB += 1
         logging.info("Running ITEM DETAIL crawler ...")
         if len(self.cls.buffer_items) > 0:
             item = self.cls.buffer_items.pop(0)

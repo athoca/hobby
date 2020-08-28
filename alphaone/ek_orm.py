@@ -37,7 +37,7 @@ class EKItem(Base):
     title = Column(String(255), nullable=False)
     url = Column(String(300), nullable=False)
     price = Column(Float, nullable=False)
-    release_date = Column(DateTime, nullable=False)
+    release_time = Column(DateTime, nullable=False)
     stadt = Column(String(255), nullable=False)
     category = Column(String(255), nullable=True)
     sub_category = Column(String(255), nullable=True)
@@ -59,12 +59,21 @@ EKUser.items = relationship("EKItem", order_by=EKItem.id, back_populates="seller
 class EKViewCount(Base):
     __tablename__ = 'ek_view_counts'
     id = Column(BigIntegerType, primary_key=True)    
-    count = Column(SmallInteger, nullable=False)
-    at = Column(Integer, nullable=False)   # each 1 minute is 1 increment
+    h4 = Column(SmallInteger, nullable=False)
+    d1 = Column(SmallInteger, nullable=False)
+    d3 = Column(SmallInteger, nullable=False)
+    d5 = Column(SmallInteger, nullable=False)
+    d7 = Column(SmallInteger, nullable=False)
+    d10 = Column(SmallInteger, nullable=False)
+    d14 = Column(SmallInteger, nullable=False)
+    d28 = Column(SmallInteger, nullable=False)
+    next_count_time = Column(DateTime, nullable=False)
+    release_time = Column(DateTime, nullable=False)
     item_id = Column(BigInteger, ForeignKey('ek_items.id'), nullable=False)
 
     def __repr__(self):
-        return "<EKViewCount(of item={}, count={}, at={})>".format(self.item_id, self.count, self.at)
+        return "<EKViewCount(of item={}, h4={}, d1={}, d3={}, d5={}, d7={}, d10={}, d14={}, d28={})>".\
+        format(self.item_id, self.h4, self.d1, self.d3, self.d5, self.d7, self.d10, self.d14, self.d28)
 
 # temporary to transfer data, do not need ForeignKey
 class EKMonitoringItem(Base):

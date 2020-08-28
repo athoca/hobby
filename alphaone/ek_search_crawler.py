@@ -10,7 +10,7 @@ from pathlib import Path
 import threading
 import collections
 
-from ek_orm import EKMonitoringItem, EKItem, session
+from ek_orm import EKMonitoringItem, EKItem, EKViewCount, session
 from ek_itemdetail_crawler import _download_image, _save_html, IMAGE_FOLDER
 
 
@@ -34,14 +34,13 @@ class SearchUrlException(Exception):
 class SearchCrawler():
     """ Crawl list of new item_id with basic information
     """
+    SEARCH_REQUEST_NB = 0
     last_search_items = []
-    # lasttime = None
-    # lasttime_news = 0
     nb_news_deque = collections.deque(maxlen=20)
     time_deque = collections.deque(maxlen=20)
     @classmethod
     def is_next(cls):
-        STANDARD_DURATION = 30
+        STANDARD_DURATION = 10
         MAX_DURATION = 60*30    # 30 MINUTES
         NB_ITEM_EACH_TURN = 30
         if cls.time_deque:
@@ -147,6 +146,7 @@ class SearchCrawler():
         return image_url
 
     def run(self):
+        self.cls.SEARCH_REQUEST_NB += 1
         logging.info("Running SEARCH crawler ...")
         news_count = 0
         now_items = []
@@ -172,10 +172,13 @@ class SearchCrawler():
     def store_items_database(self, item_id, item_url, item_title, item_price, release_time, item_stadt):
         if session.query(EKItem).filter_by(id=item_id).scalar() is None:
             # Commit new item into database, after all information exist
-            new_item = EKItem(id=item_id, url = item_url, title=item_title, price=item_price, release_date=release_time, stadt=item_stadt)
-            new_monitoring_item = EKMonitoringItem(item_id=int(item_id), next_count_time=release_time, count_duration=0)
+            new_item = EKItem(id=item_id, url = item_url, title=item_title, price=item_price, release_time=release_time, stadt=item_stadt)
+            zero_count = EKViewCount(h4=-1, d1=-1, d3=-1, d5=-1, d7=-1, d10=-1, d14=-1, d28=-1, item_id=item_id,\
+                                    next_count_time=release_time + timedelta(hours=4), \
+                                    release_time=release_time)
+            # new_monitoring_item = EKMonitoringItem(item_id=int(item_id), next_count_time=release_time, count_duration=0)
             session.add(new_item)
-            session.add(new_monitoring_item)
+            session.add(zero_count)
             session.commit()
         logging.info("::::SUCCESSFUL Store new item and monitoring item into database.")
 

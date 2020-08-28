@@ -30,6 +30,7 @@ class UserUrlException(Exception):
 class UserDetailCrawler():
     """ Crawl user detail information
     """
+    USER_REQUEST_NB = 0
     lasttime = None
     MAX_BUFFER_ITEMS = 5
     buffer_items = []
@@ -78,6 +79,7 @@ class UserDetailCrawler():
             raise UserUrlException(message=seller_url)
     
     def run(self):
+        self.cls.USER_REQUEST_NB += 1
         logging.info("Running USER DETAIL crawler ...")
         if len(self.cls.buffer_items) > 0:
             seller = self.cls.buffer_items.pop(0)

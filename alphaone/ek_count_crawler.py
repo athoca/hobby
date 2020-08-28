@@ -32,30 +32,36 @@ class CountUrlException(Exception):
 class CountCrawler():
     """ Crawl view count of an item
     """
+    COUNT_REQUEST_NB = 0
     lasttime = None
-    MAX_BUFFER_ITEMS = 10
-    buffer_items = []
+    MAX_BUFFER_ITEMS = 10 # should not too big
+    key = ""
+    key_2_timedelta = {"h4": timedelta(hours=4), "d1": timedelta(days=1), "d3": timedelta(days=3), "d5": timedelta(days=5),\
+                    "d7": timedelta(days=7), "d10": timedelta(days=10), "d14": timedelta(days=14), "d28": timedelta(days=28)}
+    buffer_items = {"h4":[], "d1":[], "d3":[], "d5":[], "d7":[], "d10":[], "d14":[], "d28":[]}
+    key_list = ["h4", "d1", "d3", "d5", "d7", "d10", "d14", "d28"]
 
     @classmethod
     def is_next(cls):
         logging.debug("Last time VIEW COUNT called: {}".format(cls.lasttime))
-        if cls.buffer_items:
-            return True
-        else:
-            cls.update_buffer_items()
-            if cls.buffer_items:
+        for key in cls.key_list:
+            if cls.buffer_items[key]:
+                cls.key = key
                 return True
             else:
-                return False 
+                cls.update_buffer_items(key)
+                if cls.buffer_items[key]:
+                    cls.key = key
+                    return True
+        return False
 
     @classmethod
-    def update_buffer_items(cls):
+    def update_buffer_items(cls, key):
         now = datetime.now()
-        # Get all items need to count now
-        monitoring_items = session.query(EKMonitoringItem).\
-                                    filter(EKMonitoringItem.next_count_time < now).\
-                                    limit(cls.MAX_BUFFER_ITEMS)
-        cls.buffer_items = monitoring_items.all()
+        kwargs = {key: '-1'}
+        items = session.query(EKViewCount).filter(EKViewCount.next_count_time < now).\
+                                            filter_by(**kwargs).limit(cls.MAX_BUFFER_ITEMS)
+        cls.buffer_items[key] = items.all()
 
     def __init__(self, headers=None):
         self.headers = headers or HEADERS
@@ -83,36 +89,17 @@ class CountCrawler():
             raise CountUrlException(message=view_count_url)
             
     def run(self):
-        if len(self.cls.buffer_items) > 0:
-            item = self.cls.buffer_items.pop(0)
+        key = self.cls.key
+        self.cls.COUNT_REQUEST_NB += 1
+        if len(self.cls.buffer_items[key]) > 0:
+            item = self.cls.buffer_items[key].pop(0)
             view_count = self.execute_request(item.item_id)
             self.cls.lasttime = datetime.now()
             if view_count:
-                now = datetime.now()
-                duration = now - item.next_count_time
-                duration = item.count_duration + duration.seconds // 60 # in minute from published. Note: duration.seconds only correct when duration positive
-
-                next_count_duration, next_count_time = self.get_next_count_time(duration, now)
-                item.count_duration = next_count_duration
-                item.next_count_time = next_count_time
-                session.add(EKViewCount(count=view_count, at=duration, item_id=item.item_id))
-                session.commit()    # both Update item and Add viewcount
+                item.__setattr__(key, view_count)
+                item.next_count_time = item.release_time + self.cls.key_2_timedelta[key]
+                # TODO: upgrade algorithm to skip when view count small => update skip date = -2, add next_count_time correspondingly
+                session.commit()    # update count item
                 logging.info("::::SUCCESSFUL Store new count into database.")
         else:
             logging.debug(":::::WARNING: Count item buffer is empty while is_next return True:::::")
-    
-    #TODO: update rule to calculate next count time
-    def get_next_count_time(self, count_duration, count_time):
-        if count_duration < 1440:
-            next_count_duration = count_duration + 60           # check every hour first day
-            next_count_time = count_time + timedelta(minutes=60)
-        elif count_duration < 4320:
-            next_count_duration = count_duration + 120          # check every 2 hours next 2 days
-            next_count_time = count_time + timedelta(minutes=120)
-        elif count_duration < 10080:
-            next_count_duration = count_duration + 240          # check every 4 hours next 4 days
-            next_count_time = count_time + timedelta(minutes=240)
-        else:
-            next_count_duration = count_duration + 1440 # check everyday
-            next_count_time = count_time + timedelta(minutes=1440)
-        return next_count_duration, next_count_time

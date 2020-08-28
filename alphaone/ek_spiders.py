@@ -9,7 +9,7 @@ from ek_itemdetail_crawler import ItemDetailCrawler
 from ek_userdetail_crawler import UserDetailCrawler
 
 
-CRAWL_FREQUENCE_IN_SECONDS = 7
+CRAWL_FREQUENCE_IN_SECONDS = 4
 crawl_next_call = time.time()
 
 def get_next_crawler():
@@ -37,6 +37,9 @@ if __name__ == "__main__":
         status_code = crawler.run()
         crawl_next_call = crawl_next_call + CRAWL_FREQUENCE_IN_SECONDS
         sleep_duration = max(crawl_next_call - time.time(), 0.001)
+        logging.debug("nb search: {}, nb count: {}, nb item: {}, nb user: {}.".\
+                        format(SearchCrawler.SEARCH_REQUEST_NB, CountCrawler.COUNT_REQUEST_NB,\
+                                ItemDetailCrawler.ITEM_REQUEST_NB, UserDetailCrawler.USER_REQUEST_NB))
         logging.debug("Time to next crawling turn = {}.".format(crawl_next_call - time.time()))
         logging.info("*********************************************************************************************")
         time.sleep(sleep_duration)
