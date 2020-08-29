@@ -34,6 +34,7 @@ class SearchUrlException(Exception):
 class SearchCrawler():
     """ Crawl list of new item_id with basic information
     """
+    NEW_ITEM_NB = 0
     SEARCH_REQUEST_NB = 0
     last_search_items = []
     nb_news_deque = collections.deque(maxlen=20)
@@ -159,6 +160,7 @@ class SearchCrawler():
                     self.store_items_database(item_id, item_url, item_title, item_price, release_time, item_stadt)
                     self.store_an_image(image_url, item_id)
                     news_count += 1
+                    self.cls.NEW_ITEM_NB += 1
                     logging.debug("New item id = {}".format(item_id))
                 else:
                     logging.debug("Existed item id = {}".format(item_id))
