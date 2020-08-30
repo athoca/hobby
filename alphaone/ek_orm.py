@@ -88,7 +88,8 @@ class EKMonitoringItem(Base):
         return "<EKMonitoringItem(item_id={}, seller_id={})>".format(self.item_id, self.seller_id)
 
 from sqlalchemy import create_engine
-engine = create_engine('sqlite:////Users/chaunguyen/workspace/hobby/alphaone/alphaone.db', echo=False)
+# engine = create_engine('sqlite:////Users/chaunguyen/workspace/hobby/alphaone/alphaone.db', echo=False)
+engine = create_engine('sqlite:///./alphaone.db', echo=False)
 
 from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
