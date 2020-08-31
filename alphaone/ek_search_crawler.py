@@ -140,7 +140,7 @@ class SearchCrawler():
         item_price = ''.join(filter(str.isdigit, item_price))   # keep only numerical price
         if not item_price:
             item_price = -1.0 # not specified
-        return item_price 
+        return int(item_price)
     
     def _extract_image_url(self, item):
         image_url = item.find('img', {"class": "lazy"}).attrs['data-src']
