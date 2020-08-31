@@ -36,8 +36,8 @@ class CountCrawler():
     lasttime = None
     MAX_BUFFER_ITEMS = 10 # should not too big
     key = ""
-    key_2_timedelta = {"h4": timedelta(hours=4), "d1": timedelta(days=1), "d3": timedelta(days=3), "d5": timedelta(days=5),\
-                    "d7": timedelta(days=7), "d10": timedelta(days=10), "d14": timedelta(days=14), "d28": timedelta(days=28)}
+    key_2_timedelta = {"h4": timedelta(days=1), "d1": timedelta(days=3), "d3": timedelta(days=5), "d5": timedelta(days=7), \
+                    "d7": timedelta(days=10), "d10": timedelta(days=14), "d14": timedelta(days=28), "d28": timedelta(weeks=52)}
     buffer_items = {"h4":[], "d1":[], "d3":[], "d5":[], "d7":[], "d10":[], "d14":[], "d28":[]}
     key_list = ["h4", "d1", "d3", "d5", "d7", "d10", "d14", "d28"]
 
