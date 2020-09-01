@@ -45,7 +45,6 @@ if __name__ == "__main__":
             logging.debug("Time to next crawling turn = {}.".format(crawl_next_call - time.time()))
             logging.info("*********************************************************************************************")
             time.sleep(sleep_duration)
-            time.sleep(sleep_duration)
         except Exception as e:
             logging.debug(e)
             logging.info("I pass the crawling turn at {} and waiting for {}.".format(time.time(), CRAWL_FREQUENCE_IN_SECONDS))

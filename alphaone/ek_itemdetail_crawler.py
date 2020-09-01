@@ -68,6 +68,7 @@ class ItemDetailCrawler():
         # Get all items need to update now
         updating_items = session.query(EKItem).\
                                     filter(EKItem.seller_id == None).\
+                                    filter(EKItem.status == None).\
                                     limit(cls.MAX_BUFFER_ITEMS)
         cls.buffer_items = updating_items.all()
 
@@ -84,6 +85,14 @@ class ItemDetailCrawler():
 
     def _extract_item_description(self, item_doc):
         return item_doc.find('p', {'class':'ad-keydetails--ad-description'}).text
+    
+    def _is_no_longer_available(self, doc):
+        available = doc.find('p', {'class':'message-friendlyhint'})
+        if available:
+            available = available.text
+            if "nicht mehr verfügbar" in available:
+                return True
+        return False
 
     def execute_request(self, item_url):
         try:
@@ -94,6 +103,8 @@ class ItemDetailCrawler():
             # _save_html(response, "test.html")
             page = response.text
             doc = soup(page, "html.parser")
+            if self._is_no_longer_available(doc):
+                raise ItemUrlException(message='no available')
             javascript = doc.find('script',{'type':'text/javascript'})
             javascript = javascript.contents[0].split("\n")
             seller_id = ''.join(filter(str.isdigit, javascript[9]))   # magic number 9
@@ -104,12 +115,14 @@ class ItemDetailCrawler():
             image_nb = len(item_images)
             image_urls = [ii.find('img').attrs['src'] for ii in item_images]
             seller_name = doc.find('h2', {'class':'userprofile-teaser--title'}).text
-            
             logging.debug(":::: Finish query item detail SUCCESSFUL: {}".format(item_url))
             return item_category, item_subcategory, item_description, image_nb, image_urls, seller_id, seller_name
         except Exception as e:
             print(e)
-            raise ItemUrlException(message=item_url)
+            if isinstance(e, ItemUrlException):
+                raise e
+            else:
+                raise ItemUrlException(message=item_url)
     
     def store_images(self, image_urls, item_id):
         # Asynchronously download and store images
@@ -139,21 +152,31 @@ class ItemDetailCrawler():
         logging.info("Running ITEM DETAIL crawler ...")
         if len(self.cls.buffer_items) > 0:
             item = self.cls.buffer_items.pop(0)
-            item_category, item_subcategory, item_description, image_nb, image_urls, seller_id, seller_name = self.execute_request(item.url)
-            self.cls.lasttime = datetime.now()
-            if seller_id: # if execute request not return None
-                item.item_category = item_category
-                item.item_subcategory = item_subcategory
-                item.item_description = item_description
-                item.image_nb = image_nb
-                item.seller_id = seller_id
-                self.store_images(image_urls, item.id)
-                # Get user information
-                if session.query(EKUser).filter_by(id=seller_id).scalar() is None:
-                    seller_address = item.stadt
-                    new_user = EKUser(id=seller_id, name=seller_name, address=seller_address)
-                    session.add(new_user)
-                session.commit()    # both Update item detail and add user
-                logging.info("::::SUCCESSFUL Store new item detail and user into database.")
+            try:
+                # TODO: add logic to remove item after no available. Check message, if not existed => update status. DONE. Keep sample code debug
+                # url = "https://m.ebay-kleinanzeigen.de/s-anzeige/apple-iphone-11-pro-max-256gb-midnight-green-neu-ungeoeffnet/1496486650-173-6397"
+                # item_category, item_subcategory, item_description, image_nb, image_urls, seller_id, seller_name = self.execute_request(url)
+                item_category, item_subcategory, item_description, image_nb, image_urls, seller_id, seller_name = self.execute_request(item.url)
+                self.cls.lasttime = datetime.now()
+                if seller_id: # if execute request not return None
+                    item.item_category = item_category
+                    item.item_subcategory = item_subcategory
+                    item.item_description = item_description
+                    item.image_nb = image_nb
+                    item.seller_id = seller_id
+                    self.store_images(image_urls, item.id)
+                    # Get user information
+                    if session.query(EKUser).filter_by(id=seller_id).scalar() is None:
+                        seller_address = item.stadt
+                        new_user = EKUser(id=seller_id, name=seller_name, address=seller_address)
+                        session.add(new_user)
+                    session.commit()    # both Update item detail and add user
+                    logging.info("::::SUCCESSFUL Store new item detail and user into database.")
+            except ItemUrlException as e:
+                if e.message == 'no available':
+                    item.status = 'no available'
+                    session.commit()
+                    logging.info("::::SUCCESSFUL Update item status no available.")
+                raise e
         else:
             logging.debug(":::::WARNING: Count item buffer is empty while is_next return True:::::")
