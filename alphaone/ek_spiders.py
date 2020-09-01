@@ -9,7 +9,7 @@ from ek_itemdetail_crawler import ItemDetailCrawler
 from ek_userdetail_crawler import UserDetailCrawler
 
 
-CRAWL_FREQUENCE_IN_SECONDS = 6
+CRAWL_FREQUENCE_IN_SECONDS = 7.5
 crawl_next_call = time.time()
 
 def get_next_crawler():
@@ -36,13 +36,15 @@ if __name__ == "__main__":
             crawler = get_next_crawler()
             status_code = crawler.run()
             crawl_next_call = crawl_next_call + CRAWL_FREQUENCE_IN_SECONDS
-            sleep_duration = max(crawl_next_call - time.time(), 0.001)
+            # Co hien tuong cascade => lam cho trong 1 thoi gian ngan, call rat nhieu lan. Fix thay sleep_duration min = CRAWL_FREQUENCE_IN_SECONDS/2
+            sleep_duration = max(crawl_next_call - time.time(), CRAWL_FREQUENCE_IN_SECONDS/2)
             logging.debug("nb search: {}, nb news: {}, nb count: {}, key: {}, nb item: {}, nb user: {}.".\
                             format(SearchCrawler.SEARCH_REQUEST_NB, SearchCrawler.NEW_ITEM_NB, \
                                 CountCrawler.COUNT_REQUEST_NB, CountCrawler.key, \
                                     ItemDetailCrawler.ITEM_REQUEST_NB, UserDetailCrawler.USER_REQUEST_NB))
             logging.debug("Time to next crawling turn = {}.".format(crawl_next_call - time.time()))
             logging.info("*********************************************************************************************")
+            time.sleep(sleep_duration)
             time.sleep(sleep_duration)
         except Exception as e:
             logging.debug(e)
